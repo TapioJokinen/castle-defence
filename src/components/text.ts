@@ -2,12 +2,12 @@ import Component from './component';
 import Vector2 from '../vector2';
 
 export default class TextComponent extends Component {
+  text: string;
   position: Vector2;
   onHover: (() => void | undefined) | undefined;
 
   private ctx: CanvasRenderingContext2D;
   private fillStyle: string;
-  private readonly text: string;
   private readonly fontSize: number;
   private readonly fontWeight: string;
   private readonly fontFamily: string;
@@ -39,6 +39,14 @@ export default class TextComponent extends Component {
   update(elapsed: number) {
     super.update(elapsed);
     this.draw();
+  }
+
+  /**
+   * Set text for the text component
+   * @param text
+   */
+  setText(text: string): void {
+    this.text = text;
   }
 
   /**
