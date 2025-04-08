@@ -1,6 +1,7 @@
 import Component from './components/component';
 import BackgroundLayer from './layers/background-layer';
 import { GameState, GameStates } from '../types/game-manager';
+import WaveManager from './waves/wave-manager';
 
 export default class GameManager extends Component {
   /**
@@ -8,16 +9,16 @@ export default class GameManager extends Component {
    */
   gameState: GameState;
   /**
-   * Remaining wave idle time in seconds
-   */
-  waveIdleTimerS: number;
-  /**
    * Enum of game states
    */
   readonly gameStates: GameStates = {
     MainMenu: 'main-menu',
     InGame: 'in-game',
   };
+  /**
+   * Wave manager for handling wave events
+   */
+  readonly waveManager: WaveManager;
   /**
    * If true, we need to run onGameStateChange
    * @private
@@ -31,10 +32,13 @@ export default class GameManager extends Component {
 
   constructor(backgroundLayer: BackgroundLayer) {
     super('GAME_MANAGER');
+    this.waveManager = new WaveManager(this);
+
     this.gameState = this.gameStates.MainMenu;
-    this.waveIdleTimerS = 0;
+
     this.backgroundLayer = backgroundLayer;
     this.backgroundLayer.setGameManager(this);
+
     this.renderAll();
   }
 
@@ -42,7 +46,7 @@ export default class GameManager extends Component {
     super.update(elapsed);
     this.onGameStateChange();
 
-    this.waveIdleTimerS -= elapsed;
+    this.waveManager.reduceWaveIdleTimer(elapsed);
 
     this.backgroundLayer.update(elapsed);
   }
@@ -87,7 +91,7 @@ export default class GameManager extends Component {
    * @private
    */
   private initializeGame() {
-    this.waveIdleTimerS = 30;
+    this.waveManager.setWaveIdleTimer(30);
     this.backgroundLayer.loadGame();
   }
 }

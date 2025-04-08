@@ -23,6 +23,6 @@ export default class MapManager {
     if (!ctx) return;
 
     const route = new Route('R_EASY', ctx, EASY_PATH, 50);
-    this.backgroundLayer.components.push(route);
+    this.backgroundLayer.components.set(route.tag, route);
   }
 }

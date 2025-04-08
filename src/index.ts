@@ -9,5 +9,7 @@ gameEngine.start();
 
 // Add game manager after we have started so all the required
 // components are already loaded.
-if (gameEngine.backgroundLayer)
-  gameEngine.addComponent(new GameManager(gameEngine.backgroundLayer));
+if (gameEngine.backgroundLayer) {
+  const gameManager = new GameManager(gameEngine.backgroundLayer);
+  gameEngine.components.set(gameManager.tag, gameManager);
+}

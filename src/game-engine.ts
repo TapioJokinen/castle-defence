@@ -14,14 +14,16 @@ export default class GameEngine {
   backgroundLayer: BackgroundLayer | undefined;
   /**
    * Game canvas width
-   * @private
    */
-  public width: number = 0;
+  width: number = 0;
   /**
    * Game canvas height
-   * @private
    */
-  public height: number = 0;
+  height: number = 0;
+  /**
+   * List of components attached directly to game engine
+   */
+  components: Map<string, Component> = new Map();
   /**
    * Timestamp returned by the requestAnimationFrame()
    * @private
@@ -51,11 +53,6 @@ export default class GameEngine {
    * @private
    */
   private lastFpsUpdate: number | undefined;
-  /**
-   * List of components attached directly to game engine
-   * @private
-   */
-  private components: Component[] = [];
 
   constructor() {
     GameEngine.instance = this;
@@ -83,27 +80,6 @@ export default class GameEngine {
    */
   getStage() {
     return document.getElementById('game-stage');
-  }
-
-  /**
-   * Add component
-   * @param component
-   */
-  addComponent(component: Component) {
-    this.components.push(component);
-  }
-
-  /**
-   * Find a first component with given tag
-   * @param tag
-   */
-  findComponentByTag<T>(tag: string) {
-    let component = this.components.find((c) => c.tag === tag);
-
-    if (!component)
-      component = this.backgroundLayer?.components.find((c) => c.tag === tag);
-
-    return (component as T) || null;
   }
 
   /**

@@ -5,11 +5,12 @@ import RoundedRectangleComponent from '../components/rounded-rectangle';
 import Component from '../components/component';
 import GameManager from '../game-manager';
 import MapManager from '../maps/map-manager';
+import WaveManager from '../waves/wave-manager';
 
 const BG_COLOR = '#e7e7e7';
 
 export default class BackgroundLayer extends LayerManager {
-  private mapManager: MapManager;
+  private readonly mapManager: MapManager;
 
   constructor(layer: HTMLCanvasElement) {
     super('BG_LAYER', layer);
@@ -18,7 +19,7 @@ export default class BackgroundLayer extends LayerManager {
   }
 
   update(elapsed: number) {
-    this.checkForWaveIdleTimer();
+    this.gameManager?.waveManager.checkForWaveIdleTimer();
     super.update(elapsed);
   }
 
@@ -38,42 +39,44 @@ export default class BackgroundLayer extends LayerManager {
 
     this.layer.style.backgroundColor = BG_COLOR;
 
-    this.components.push(
-      new TextComponent(
-        'TITLE',
-        this.ctx,
-        'Castle Defence',
-        '#000000',
-        50,
-        'normal',
-        'MedievalSharp',
-        new Vector2(470, 200)
-      ),
-      new RoundedRectangleComponent(
-        'START_BUTTON',
-        this.ctx,
-        150,
-        35,
-        [8],
-        new Vector2(560, 250),
-        '#000000',
-        '#ffffff',
-        (self: RoundedRectangleComponent) => {
-          self.setFillStyle('#56795e');
-          document.body.style.cursor = 'pointer';
-        }
-      ),
-      new TextComponent(
-        'START_BUTTON_TEXT',
-        this.ctx,
-        'Start Game',
-        '#000000',
-        20,
-        'bold',
-        'MedievalSharp',
-        new Vector2(580, 275)
-      )
+    const title = new TextComponent(
+      'TITLE',
+      this.ctx,
+      'Castle Defence',
+      '#000000',
+      50,
+      'normal',
+      'MedievalSharp',
+      new Vector2(470, 200)
     );
+    const startButton = new RoundedRectangleComponent(
+      'START_BUTTON',
+      this.ctx,
+      150,
+      35,
+      [8],
+      new Vector2(560, 250),
+      '#000000',
+      '#ffffff',
+      (self: RoundedRectangleComponent) => {
+        self.setFillStyle('#56795e');
+        document.body.style.cursor = 'pointer';
+      }
+    );
+    const startButtonText = new TextComponent(
+      'START_BUTTON_TEXT',
+      this.ctx,
+      'Start Game',
+      '#000000',
+      20,
+      'bold',
+      'MedievalSharp',
+      new Vector2(580, 275)
+    );
+
+    this.components.set(title.tag, title);
+    this.components.set(startButton.tag, startButton);
+    this.components.set(startButtonText.tag, startButtonText);
 
     this.render = true;
   }
@@ -81,7 +84,7 @@ export default class BackgroundLayer extends LayerManager {
   loadGame() {
     if (!this.ctx) return;
 
-    this.components = [];
+    this.components.clear();
     this.mapManager.loadMap(1);
     this.render = true;
   }
@@ -102,11 +105,19 @@ export default class BackgroundLayer extends LayerManager {
   ) {
     if (component instanceof RoundedRectangleComponent) {
       switch (component.tag) {
-        case 'START_BUTTON': {
-          const text =
-            this.gameEngine.findComponentByTag<TextComponent>(
-              'START_BUTTON_TEXT'
-            );
+        case 'START_BUTTON':
+        case 'WAVE_IDLE_TIMER_BUTTON': {
+          let textId = '';
+          switch (component.tag) {
+            case 'START_BUTTON':
+              textId = 'START_BUTTON_TEXT';
+              break;
+            case 'WAVE_IDLE_TIMER_BUTTON':
+              textId = 'WAVE_IDLE_TIMER_BUTTON_TEXT';
+              break;
+          }
+
+          const text = this.components.get(textId) as TextComponent;
           if (!text) return;
 
           if (component.isMouseInside(mousePosition)) {
@@ -153,81 +164,24 @@ export default class BackgroundLayer extends LayerManager {
    */
   private onMouseDown(event: MouseEvent) {
     const mousePosition = new Vector2(event.offsetX, event.offsetY);
-    const hitComponents = this.components.filter(
-      (c) =>
-        c instanceof RoundedRectangleComponent && c.isMouseInside(mousePosition)
-    );
+
+    const hitComponents: Component[] = [];
+    this.components.forEach((c) => {
+      if (
+        c instanceof RoundedRectangleComponent &&
+        c.isMouseInside(mousePosition)
+      ) {
+        hitComponents.push(c);
+      }
+    });
 
     hitComponents.forEach((c) => {
       if (c.tag === 'START_BUTTON') {
-        const gameManager =
-          this.gameEngine.findComponentByTag<GameManager>('GAME_MANAGER');
-        if (gameManager) {
-          gameManager.changeState(gameManager.gameStates.InGame);
-        }
+        this.gameManager?.changeState(this.gameManager?.gameStates.InGame);
+      }
+      if (c.tag === 'WAVE_IDLE_TIMER_BUTTON') {
+        this.gameManager?.waveManager.skipWaveIdleTimer();
       }
     });
-  }
-
-  private checkForWaveIdleTimer() {
-    if (!this.gameManager) return;
-
-    if (this.gameManager.waveIdleTimerS > 0) {
-      this.createWaveIdleTimerIfNotExist();
-      this.setWaveIdleTimerText();
-      this.render = true;
-    } else {
-      this.removeWaveIdleTimer();
-    }
-  }
-
-  /**
-   * Create wave idle timer component, if it does not exist
-   * @private
-   */
-  private createWaveIdleTimerIfNotExist() {
-    if (!this.ctx) return;
-
-    const c = this.components.find((c) => c.tag === 'WAVE_IDLE_TIMER');
-    if (c) return;
-
-    this.components.push(
-      new TextComponent(
-        'WAVE_IDLE_TIMER',
-        this.ctx,
-        'Next wave starts in:',
-        '#000000',
-        20,
-        'bold',
-        'MedievalSharp',
-        new Vector2(5, 30)
-      )
-    );
-  }
-
-  /**
-   * Set wave idle timer's text
-   * @private
-   */
-  private setWaveIdleTimerText() {
-    const c = this.components.find(
-      (c) => c.tag === 'WAVE_IDLE_TIMER'
-    ) as TextComponent;
-    if (!c || !this.gameManager) return;
-
-    const textString = `Next wave starts in: ${Math.floor(this.gameManager.waveIdleTimerS)}s`;
-    c.setText(textString);
-  }
-
-  /**
-   * Remove wave idle timer component
-   * @private
-   */
-  private removeWaveIdleTimer() {
-    const c = this.components.find((c) => c.tag === 'WAVE_IDLE_TIMER');
-    if (!c) return;
-
-    this.removeComponent(c);
-    this.render = true;
   }
 }

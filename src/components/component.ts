@@ -4,8 +4,8 @@ export default class Component {
   tag: string;
   gameEngine: GameEngine;
 
-  constructor(tag: string) {
-    this.tag = tag;
+  constructor(tag?: string) {
+    this.tag = tag || crypto.randomUUID();
     this.gameEngine = GameEngine.instance;
   }
 

@@ -3,7 +3,7 @@ import GameManager from '../game-manager';
 import TextComponent from '../components/text';
 
 export default class LayerManager extends Component {
-  components: Component[];
+  components: Map<string, Component> = new Map();
   render: boolean;
   protected layer: HTMLCanvasElement;
   protected ctx: CanvasRenderingContext2D | null;
@@ -14,7 +14,6 @@ export default class LayerManager extends Component {
     this.render = false;
     this.layer = layer;
     this.ctx = this.layer.getContext('2d');
-    this.components = [];
   }
 
   update(elapsed: number) {
@@ -29,12 +28,12 @@ export default class LayerManager extends Component {
    * Remove component from layer's component-list
    * @param component
    */
-  removeComponent(component: Component) {
-    const c = this.components.find((c) => c.tag === component.tag);
+  removeComponent(tag: string) {
+    const c = this.components.get(tag);
     if (!c) return;
 
     c.destroy();
-    this.components = this.components.filter((_c) => _c.tag !== c.tag);
+    this.components.delete(tag);
   }
 
   /**
